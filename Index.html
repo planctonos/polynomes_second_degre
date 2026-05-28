@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Labo Second Degré - Première</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+</head>
+<body class="bg-gray-100 min-h-screen flex flex-col items-center p-4 md:p-8 text-gray-800">
+
+    <div class="w-full max-w-5xl bg-white rounded-2xl shadow-xl p-4 md:p-6 space-y-6">
+        
+        <nav class="flex flex-wrap gap-2 border-b border-gray-200 pb-4">
+            <button onclick="switchTab('decouverte')" id="btn-tab-decouverte" class="px-4 py-2 font-bold rounded-lg text-sm transition-all bg-indigo-600 text-white shadow-xs cursor-pointer">
+                1. Découverte (ax² + b)
+            </button>
+            <button onclick="switchTab('exercice')" id="btn-tab-exercice" class="px-4 py-2 font-bold rounded-lg text-sm transition-all bg-gray-100 text-gray-600 hover:bg-gray-200 cursor-pointer">
+                2. Exerciceur (ax² + b)
+            </button>
+            <button onclick="switchTab('factorise')" id="btn-tab-factorise" class="px-4 py-2 font-bold rounded-lg text-sm transition-all bg-gray-100 text-gray-600 hover:bg-gray-200 cursor-pointer">
+                3. Forme factorisée [Bientôt]
+            </button>
+        </nav>
+
+        <div id="tab-decouverte" class="tab-content space-y-6">
+            <div class="text-center">
+                <h1 class="text-2xl font-extrabold text-indigo-600">Observation des coefficients</h1>
+                <p class="text-gray-500 font-medium">Forme étudiée : <span class="font-mono font-bold text-indigo-700">f(x) = ax² + b</span></p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
+                <div class="space-y-4 bg-gray-50 p-4 rounded-xl border border-gray-200">
+                    <h2 class="text-base font-bold text-gray-700 border-b pb-2">Paramètres</h2>
+                    <div class="space-y-1">
+                        <div class="flex justify-between items-center">
+                            <label for="range-a" class="font-semibold text-xs text-gray-600">Coefficient a :</label>
+                            <span id="val-a" class="text-indigo-600 font-bold bg-white px-2 py-0.5 rounded border text-sm">1</span>
+                        </div>
+                        <input type="range" id="range-a" min="0" max="5" step="0.1" value="1" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-600">
+                    </div>
+                    <div class="flex items-center space-x-3 bg-white p-2.5 rounded-lg border shadow-xs">
+                        <input type="checkbox" id="allow-negative" class="w-4 h-4 text-indigo-600 border-gray-300 rounded-sm cursor-pointer">
+                        <label for="allow-negative" class="text-xs font-medium text-gray-700 cursor-pointer select-none">Autoriser a négatif (-5 à 5)</label>
+                    </div>
+                    <hr class="border-gray-200">
+                    <div class="space-y-1">
+                        <div class="flex justify-between items-center">
+                            <label for="range-b" class="font-semibold text-xs text-gray-600">Valeur b :</label>
+                            <span id="val-b" class="text-indigo-600 font-bold bg-white px-2 py-0.5 rounded border text-sm">0</span>
+                        </div>
+                        <input type="range" id="range-b" min="-3" max="3" step="0.1" value="0" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-600">
+                    </div>
+                    <hr class="border-gray-200">
+                    <div class="flex items-center space-x-3 bg-white p-2.5 rounded-lg border shadow-xs">
+                        <input type="checkbox" id="show-point-1" class="w-4 h-4 text-emerald-600 border-gray-300 rounded-sm cursor-pointer">
+                        <label for="show-point-1" class="text-xs font-medium text-gray-700 cursor-pointer select-none">Afficher le point A (x = 1)</label>
+                    </div>
+                </div>
+
+                <div class="md:col-span-2 bg-white p-4 rounded-xl border border-gray-200 flex flex-col relative h-[400px]">
+                    <div class="absolute top-3 right-3 z-10 bg-white/90 border border-indigo-100 rounded-lg px-2 py-1 shadow-xs">
+                        <span id="equation-display" class="text-base font-bold font-mono text-indigo-600">f(x) = 1x²</span>
+                    </div>
+                    <div class="w-full h-full pt-8">
+                        <canvas id="chartDecouverte"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="tab-exercice" class="tab-content hidden space-y-6">
+            <div class="flex flex-col md:flex-row justify-between items-center bg-indigo-50 p-4 rounded-xl border border-indigo-100 gap-4">
+                <div>
+                    <h1 class="text-xl font-extrabold text-indigo-900">Trouver l'équation cachée</h1>
+                    <p class="text-sm text-indigo-700">Analyse la courbe noire de référence, propose tes coefficients et valide.</p>
+                </div>
+                <div class="flex flex-wrap items-center gap-3 shrink-0">
+                    <span class="bg-white border border-indigo-200 text-indigo-800 font-bold px-3 py-1.5 rounded-lg text-sm">Question : <span id="exo-num" class="text-indigo-600">1</span> / 5</span>
+                    <span class="bg-white border border-amber-200 text-amber-800 font-bold px-3 py-1.5 rounded-lg text-sm">Total Essais : <span id="exo-essais" class="text-amber-600">0</span></span>
+                    <span class="bg-emerald-600 text-white font-bold px-3 py-1.5 rounded-lg text-sm shadow-xs">Score : <span id="exo-score">0</span> / 5</span>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
+                <div id="exo-panel" class="space-y-4 bg-gray-50 p-4 rounded-xl border border-gray-200">
+                    <div class="flex justify-between items-center border-b pb-2">
+                        <h2 class="text-base font-bold text-gray-700">Vos Propositions</h2>
+                        <span id="tentatives-badge" class="text-[11px] font-bold bg-amber-100 text-amber-800 px-2 py-0.5 rounded-sm">Essai : 0/3</span>
+                    </div>
+                    
+                    <div class="space-y-1">
+                        <label class="block text-xs font-semibold text-gray-600">Saisir la valeur de a :</label>
+                        <input type="number" id="input-a" step="0.1" placeholder="Ex: 1.5" class="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 font-mono font-bold">
+                    </div>
+                    
+                    <div class="space-y-1">
+                        <label class="block text-xs font-semibold text-gray-600">Saisir la valeur de b :</label>
+                        <input type="number" id="input-b" step="0.1" placeholder="Ex: -2" class="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 font-mono font-bold">
+                    </div>
+
+                    <button onclick="checkAnswer()" id="btn-valider" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg text-sm transition-all shadow-xs cursor-pointer">
+                        Valider ma réponse
+                    </button>
+
+                    <div id="exo-feedback" class="hidden p-3 rounded-lg border text-xs font-medium space-y-2">
+                        <p id="feedback-text"></p>
+                        <button id="btn-action-suivante" class="w-full font-bold py-1 px-2 rounded border text-xs transition-all cursor-pointer"></button>
+                    </div>
+                </div>
+
+                <div class="md:col-span-2 bg-white p-4 rounded-xl border border-gray-200 flex flex-col relative h-[400px]">
+                    <div class="absolute top-2 left-2 z-10 bg-white/90 p-2 rounded border border-gray-200 text-[11px] font-bold space-y-1 shadow-xs">
+                        <div class="flex items-center space-x-2"><div class="w-3 h-0.5 bg-gray-800"></div><span class="text-gray-700">Courbe Mystère</span></div>
+                        <div id="legende-eleve" class="hidden flex items-center space-x-2"><div class="w-3 h-0.5 bg-orange-500"></div><span class="text-orange-600">Votre Proposition</span></div>
+                        <div id="legende-aide" class="hidden flex items-center space-x-2"><div class="w-3 h-0.5 bg-emerald-500"></div><span class="text-emerald-600">Aide Graphique</span></div>
+                    </div>
+                    <div class="w-full h-full pt-8">
+                        <canvas id="chartExercice"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="tab-factorise" class="tab-content hidden py-12 text-center space-y-4">
+            <div class="w-16 h-16 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto text-2xl font-bold">i</div>
+            <h2 class="text-xl font-bold text-gray-700">Activité en cours de préparation</h2>
+            <p class="text-gray-500 text-sm max-w-md mx-auto">Cette section sera dédiée à l'étude de la forme factorisée <span class="font-mono bg-gray-100 px-1 py-0.5 rounded text-amber-700">f(x) = a(x - x₁)(x - x₂)</span>.</p>
+        </div>
+
+    </div>
+
+    <script>
+        // --- CONFIGURATIONS DE BASE ---
+        Chart.register(ChartDataLabels);
+
+        const configScales = {
+            x: { type: 'linear', min: -5, max: 5, position: { y: 0 }, grid: { color: 'rgba(156, 163, 175, 0.35)', lineWidth: 1 }, ticks: { stepSize: 1, font: { weight: 'bold' }, callback: v => v === 0 ? '' : v } },
+            y: { type: 'linear', min: -5, max: 5, position: { x: 0 }, grid: { color: 'rgba(156, 163, 175, 0.35)', lineWidth: 1 }, ticks: { stepSize: 1, font: { weight: 'bold' }, callback: v => v === 0 ? '0' : v } }
+        };
+
+        const generateDataPoints = (a, b) => {
+            const data = [];
+            for (let x = -5; x <= 5; x = Math.round((x + 0.1) * 10) / 10) {
+                data.push({x: x, y: Math.round((a * x * x + b) * 100) / 100});
+            }
+            return data;
+        };
+
+        // --- PARTIE 1 : DÉCOUVERTE ---
+        const rangeA = document.getElementById('range-a');
+        const rangeB = document.getElementById('range-b');
+        const checkboxNeg = document.getElementById('allow-negative');
+        const checkboxPoint1 = document.getElementById('show-point-1');
+        const valA = document.getElementById('val-a');
+        const valB = document.getElementById('val-b');
+        const equationDisplay = document.getElementById('equation-display');
+        const ctxDecouverte = document.getElementById('chartDecouverte').getContext('2d');
+
+        const crossPlugin = {
+            id: 'crossPlugin',
+            afterDatasetsDraw(chart) {
+                if (chart.canvas.id !== 'chartDecouverte' || !checkboxPoint1.checked) return;
+                const { ctx, scales: { x, y } } = chart;
+                if (!chart.data.datasets[1].data.length) return;
+                const pt = chart.data.datasets[1].data[0];
+                const pxX = x.getPixelForValue(pt.x);
+                const pxY = y.getPixelForValue(pt.y);
+                ctx.save();
+                ctx.strokeStyle = 'rgb(220, 38, 38)';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.moveTo(pxX - 7, pxY - 7); ctx.lineTo(pxX + 7, pxY + 7);
+                ctx.moveTo(pxX + 7, pxY - 7); ctx.lineTo(pxX - 7, pxY + 7);
+                ctx.stroke();
+                ctx.restore();
+            }
+        };
+        Chart.register(crossPlugin);
+
+        const chartDecouverte = new Chart(ctxDecouverte, {
+            type: 'line',
+            data: {
+                datasets: [
+                    { label: 'f(x)', data: generateDataPoints(1, 0), borderColor: 'rgb(79, 70, 229)', borderWidth: 3, pointRadius: 0, tension: 0.1, datalabels: { display: false } },
+                    { label: 'Point A', data: [], showLine: false, datalabels: { display: true, align: 'right', offset: 14, backgroundColor: 'white', borderColor: 'rgb(220, 38, 38)', borderWidth: 1.5, borderRadius: 6, padding: 4, color: 'rgb(185, 28, 28)', font: { weight: 'bold', size: 12 }, formatter: v => `A(1 ; ${v.y.toFixed(1)})` } }
+                ]
+            },
+            options: { responsive: true, maintainAspectRatio: false, scales: configScales, plugins: { legend: { display: false } } }
+        });
+
+        function formatEquation(a, b) {
+            let expr = "f(x) = ";
+            if (a === 0 && b === 0) return expr + "0";
+            if (a === 1) expr += "x²";
+            else if (a === -1) expr += "-x²";
+            else if (a !== 0) expr += a + "x²";
+            if (b > 0) expr += (a !== 0 ? " + " : "") + b;
+            else if (b < 0) expr += (a !== 0 ? " - " : "-") + Math.abs(b);
+            return expr;
+        }
+
+        function updateDecouverte() {
+            let a = parseFloat(rangeA.value);
+            let b = parseFloat(rangeB.value);
+            valA.textContent = a;
+            valB.textContent = (b > 0 ? '+' : '') + b;
+            equationDisplay.textContent = formatEquation(a, b);
+            chartDecouverte.data.datasets[0].data = generateDataPoints(a, b);
+
+            if (checkboxPoint1.checked) {
+                chartDecouverte.data.datasets[1].data = [{x: 1, y: Math.round((a + b) * 100) / 100}];
+            } else {
+                chartDecouverte.data.datasets[1].data = [];
+            }
+            chartDecouverte.update('none');
+        }
+
+        rangeA.addEventListener('input', updateDecouverte);
+        rangeB.addEventListener('input', updateDecouverte);
+        checkboxPoint1.addEventListener('change', updateDecouverte);
+        checkboxNeg.addEventListener('change', () => {
+            if (checkboxNeg.checked) rangeA.min = "-5"; 
+            else { rangeA.min = "0"; if (parseFloat(rangeA.value) < 0) rangeA.value = "0"; }
+            updateDecouverte();
+        });
+
+
+        // --- PARTIE 2 : EXERCICEUR ---
+        const ctxExercice = document.getElementById('chartExercice').getContext('2d');
+        let currentQuestion = 1;
+        let score = 0;
+        let totalEssais = 0; 
+        let essaisCetteQuestion = 0; 
+        let targetA = 0, targetB = 0;
+        let showHelpLines = false; 
+
+        const helpLinesPlugin = {
+            id: 'helpLinesPlugin',
+            afterDatasetsDraw(chart) {
+                if (chart.canvas.id !== 'chartExercice' || !showHelpLines) return;
+                const { ctx, scales: { x, y } } = chart;
+                
+                ctx.save();
+                ctx.lineWidth = 1.5;
+                ctx.setLineDash([4, 4]);
+
+                const pxB_X = x.getPixelForValue(0);
+                const pxB_Y = y.getPixelForValue(targetB);
+                ctx.strokeStyle = 'rgba(16, 185, 129, 0.8)'; 
+                ctx.fillStyle = 'rgb(16, 185, 129)';
+                ctx.beginPath();
+                ctx.arc(pxB_X, pxB_Y, 4, 0, 2 * Math.PI);
+                ctx.fill();
+
+                const targetYAt1 = targetA + targetB;
+                const px1_X = x.getPixelForValue(1);
+                const px1_Y = y.getPixelForValue(targetYAt1);
+
+                ctx.strokeStyle = 'rgba(16, 185, 129, 0.6)';
+                ctx.beginPath();
+                ctx.moveTo(x.getPixelForValue(0), px1_Y);
+                ctx.lineTo(px1_X, px1_Y);
+                ctx.moveTo(px1_X, y.getPixelForValue(0));
+                ctx.lineTo(px1_X, px1_Y);
+                ctx.stroke();
+
+                ctx.strokeStyle = 'rgb(16, 185, 129)';
+                ctx.lineWidth = 3;
+                ctx.setLineDash([]); 
+                ctx.beginPath();
+                ctx.moveTo(px1_X - 6, px1_Y - 6); ctx.lineTo(px1_X + 6, px1_Y + 6);
+                ctx.moveTo(px1_X + 6, px1_Y - 6); ctx.lineTo(px1_X - 6, px1_Y + 6);
+                ctx.stroke();
+
+                ctx.restore();
+            }
+        };
+        Chart.register(helpLinesPlugin);
+
+        // On instancie l'exercice avec la configuration par défaut de base
+        const chartExercice = new Chart(ctxExercice, {
+            type: 'line',
+            data: {
+                datasets: [
+                    { label: 'Cible', data: [], borderColor: 'rgb(31, 41, 55)', borderWidth: 3, pointRadius: 0, tension: 0.1, datalabels: { display: false } },
+                    { label: 'Eleve', data: [], borderColor: 'rgb(249, 115, 22)', borderWidth: 2.5, borderDash: [6, 4], pointRadius: 0, tension: 0.1, datalabels: { display: false } },
+                    { label: 'Correction', data: [], borderColor: 'rgb(16, 185, 129)', borderWidth: 2, pointRadius: 0, tension: 0.1, datalabels: { display: false } }
+                ]
+            },
+            options: { responsive: true, maintainAspectRatio: false, scales: configScales, plugins: { legend: { display: false } } }
+        });
+
+        function generateRandomCoeff(min, max) {
+            let val = Math.random() * (max - min) + min;
+            return Math.round(val * 2) / 2;
+        }
+
+        // AJUSTEMENT ADAPTATIF ET INTÉLLIGENT DE L'AXE Y
+        function adjustAxisY(a, b) {
+            let yMin = -5;
+            let yMax = 5;
+
+            // Cas 1 : La parabole monte (a > 0)
+            if (a > 0) {
+                if (b >= 0) {
+                    // Si elle est haute, on décale l'origine vers le bas pour voir sa concavité
+                    yMin = -2;
+                    yMax = Math.max(6, Math.ceil(a + b + 1));
+                } else {
+                    // Si le sommet est bas, on élargit vers le bas pour capter le minimum
+                    yMin = Math.min(-5, Math.floor(b - 1));
+                    yMax = Math.max(5, Math.ceil(a + b + 1));
+                }
+            } 
+            // Cas 2 : La parabole descend (a < 0)
+            else if (a < 0) {
+                if (b <= 0) {
+                    // Si elle est déjà basse, on pousse le plafond vers le haut (origine haute)
+                    yMin = Math.min(-6, Math.floor(a + b - 1));
+                    yMax = 2;
+                } else {
+                    // Sommet positif mais descend, on équilibre
+                    yMin = Math.min(-5, Math.floor(a + b - 1));
+                    yMax = Math.max(5, Math.floor(b + 1));
+                }
+            }
+            // Cas 3 : Droite horizontale pure (a = 0)
+            else {
+                yMin = Math.min(-5, Math.floor(b - 2));
+                yMax = Math.max(5, Math.ceil(b + 2));
+            }
+
+            // On applique dynamiquement les nouvelles configurations d'échelle au graphique
+            chartExercice.options.scales.y.min = yMin;
+            chartExercice.options.scales.y.max = yMax;
+        }
+
+        function initNewQuestion() {
+            essaisCetteQuestion = 0;
+            showHelpLines = false;
+            document.getElementById('exo-num').textContent = currentQuestion;
+            document.getElementById('exo-essais').textContent = totalEssais;
+            document.getElementById('tentatives-badge').textContent = `Essai : ${essaisCetteQuestion}/3`;
+            document.getElementById('tentatives-badge').className = "text-[11px] font-bold bg-amber-100 text-amber-800 px-2 py-0.5 rounded-sm";
+            
+            document.getElementById('input-a').value = '';
+            document.getElementById('input-b').value = '';
+            document.getElementById('input-a').disabled = false;
+            document.getElementById('input-b').disabled = false;
+            document.getElementById('btn-valider').disabled = false;
+            document.getElementById('exo-feedback').className = "hidden";
+            document.getElementById('legende-eleve').classList.add('hidden');
+            document.getElementById('legende-aide').classList.add('hidden');
+
+            do {
+                targetA = generateRandomCoeff(-4, 4);
+                targetB = generateRandomCoeff(-3, 3);
+            } while (targetA === 0 && targetB === 0);
+
+            // Appel de notre fonction de recentrage dynamique avant affichage
+            adjustAxisY(targetA, targetB);
+
+            chartExercice.data.datasets[0].data = generateDataPoints(targetA, targetB);
+            chartExercice.data.datasets[1].data = []; 
+            chartExercice.data.datasets[2].data = []; 
+            chartExercice.update('none'); // Mise à jour complète avec l'axe recalculé
+        }
+
+        function checkAnswer() {
+            const inputA = document.getElementById('input-a');
+            const inputB = document.getElementById('input-b');
+            
+            if (inputA.value === "" || inputB.value === "") {
+                alert("Veuillez remplir les deux champs 'a' et 'b' avant de valider.");
+                return;
+            }
+
+            totalEssais++;
+            essaisCetteQuestion++;
+            document.getElementById('exo-essais').textContent = totalEssais;
+            document.getElementById('tentatives-badge').textContent = `Essai : ${essaisCetteQuestion}/3`;
+
+            let ansA = parseFloat(inputA.value);
+            let ansB = parseFloat(inputB.value);
+
+            chartExercice.data.datasets[1].data = generateDataPoints(ansA, ansB);
+            document.getElementById('legende-eleve').classList.remove('hidden');
+            chartExercice.update();
+
+            const feedbackDiv = document.getElementById('exo-feedback');
+            const feedbackText = document.getElementById('feedback-text');
+            const nextBtn = document.getElementById('btn-action-suivante');
+            feedbackDiv.classList.remove('hidden');
+
+            if (Math.abs(ansA - targetA) < 0.01 && Math.abs(ansB - targetB) < 0.01) {
+                score++;
+                document.getElementById('exo-score').textContent = score;
+                inputA.disabled = true;
+                inputB.disabled = true;
+                document.getElementById('btn-valider').disabled = true;
+                
+                feedbackDiv.className = "p-3 rounded-lg border text-xs font-medium space-y-2 bg-emerald-50 border-emerald-200 text-emerald-800";
+                feedbackText.innerHTML = `🎉 <strong>Excellent travail !</strong> C'est la bonne équation.`;
+                setupNextAction(nextBtn);
+            } 
+            else if (essaisCetteQuestion < 3) {
+                document.getElementById('tentatives-badge').className = "text-[11px] font-bold bg-rose-100 text-rose-800 px-2 py-0.5 rounded-sm";
+                feedbackDiv.className = "p-3 rounded-lg border text-xs font-medium space-y-2 bg-rose-50 border-rose-200 text-rose-800";
+                feedbackText.innerHTML = `❌ <strong>Ce n'est pas tout à fait ça (Essai ${essaisCetteQuestion}/3).</strong> Observe les écarts et ajuste tes curseurs.`;
+                
+                nextBtn.textContent = "Modifier mes valeurs";
+                nextBtn.className = "w-full bg-white border border-rose-300 text-rose-700 font-bold py-1 px-2 rounded hover:bg-rose-100 transition-all cursor-pointer text-center block";
+                nextBtn.onclick = function() {
+                    feedbackDiv.classList.add('hidden');
+                };
+            } 
+            else {
+                inputA.disabled = true;
+                inputB.disabled = true;
+                document.getElementById('btn-valider').disabled = true;
+                document.getElementById('tentatives-badge').className = "text-[11px] font-bold bg-gray-200 text-gray-700 px-2 py-0.5 rounded-sm";
+
+                showHelpLines = true;
+                chartExercice.data.datasets[2].data = generateDataPoints(targetA, targetB);
+                document.getElementById('legende-aide').classList.remove('hidden');
+                chartExercice.update();
+
+                feedbackDiv.className = "p-3 rounded-lg border text-xs font-medium space-y-2 bg-amber-50 border-amber-200 text-amber-900";
+                
+                let calculYAt1 = targetA + targetB;
+                feedbackText.innerHTML = `
+                    💡 <strong>3 essais atteints. Voici l'explication :</strong><br><br>
+                    • <strong>Trouver b :</strong> La courbe coupe l'axe des ordonnées au point (0 ; ${targetB}), donc <span class="bg-amber-100 px-1 rounded font-mono font-bold">b = ${targetB}</span>.<br>
+                    • <strong>Trouver a :</strong> À l'abscisse x = 1, l'ordonnée vaut ${calculYAt1}. Comme f(1) = a + b, on a l'égalité a + (${targetB}) = ${calculYAt1}, ce qui donne <span class="bg-amber-100 px-1 rounded font-mono font-bold">a = ${targetA}</span>.<br><br>
+                    L'équation était donc : <strong>${formatEquation(targetA, targetB)}</strong>.
+                `;
+                setupNextAction(nextBtn);
+            }
+        }
+
+        function setupNextAction(buttonElement) {
+            if (currentQuestion < 5) {
+                buttonElement.textContent = "Question suivante ➡️";
+                buttonElement.className = "w-full bg-indigo-600 text-white font-bold py-1 px-2 rounded hover:bg-indigo-700 transition-all cursor-pointer text-center block";
+                buttonElement.onclick = function() {
+                    currentQuestion++;
+                    initNewQuestion();
+                };
+            } else {
+                buttonElement.textContent = "Terminer la série et voir le bilan";
+                buttonElement.className = "w-full bg-emerald-600 text-white font-bold py-1 px-2 rounded hover:bg-emerald-700 transition-all cursor-pointer text-center block";
+                buttonElement.onclick = function() {
+                    displayFinalBilan();
+                };
+            }
+        }
+
+        function displayFinalBilan() {
+            let difference = totalEssais - score;
+            let titre = "";
+            let message = "";
+
+            if (difference === 0) {
+                titre = "🥇 Félicitations parfaites !";
+                message = `Incroyable ! Tu as validé toutes les questions au premier essai ! Les coefficients n'ont plus aucun secret pour toi.`;
+            } else if (difference <= 4) {
+                titre = "✨ Félicitations !";
+                message = `Bon travail ! Tu as terminé avec un score de ${score}/5 pour un total de ${totalEssais} essais. Tu as su corriger tes erreurs avec efficacité.`;
+            } else {
+                titre = "📈 À retravailler !";
+                message = `Série terminée (Score : ${score}/5). Il t'a fallu un total de ${totalEssais} essais pour aller au bout.\n\nJe te propose de recommencer immédiatement une nouvelle série d'entraînement pour fluidifier ta lecture graphique !`;
+            }
+
+            alert(`🏁 LE BILAN DE TA SÉRIE :\n\n• Questions réussies : ${score} / 5\n• Nombre total d'essais cumulés : ${totalEssais}\n\n${titre}\n${message}`);
+
+            currentQuestion = 1;
+            score = 0;
+            totalEssais = 0;
+            document.getElementById('exo-score').textContent = score;
+            document.getElementById('exo-essais').textContent = totalEssais;
+            initNewQuestion();
+        }
+
+        // --- CONTRÔLE DES ONGLETS ---
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+            
+            const tabs = ['decouverte', 'exercice', 'factorise'];
+            tabs.forEach(t => {
+                const btn = document.getElementById(`btn-tab-${t}`);
+                if (t === tabId) {
+                    btn.className = "px-4 py-2 font-bold rounded-lg text-sm transition-all bg-indigo-600 text-white shadow-xs cursor-pointer";
+                } else {
+                    btn.className = "px-4 py-2 font-bold rounded-lg text-sm transition-all bg-gray-100 text-gray-600 hover:bg-gray-200 cursor-pointer";
+                }
+            });
+
+            if (tabId === 'decouverte') {
+                chartDecouverte.resize();
+                updateDecouverte();
+            } else if (tabId === 'exercice') {
+                chartExercice.resize();
+                if (targetA === 0 && targetB === 0) {
+                    initNewQuestion();
+                } else {
+                    chartExercice.update();
+                }
+            }
+        }
+
+        // --- INITIALISATION ---
+        updateDecouverte();
+    </script>
+</body>
+</html>
